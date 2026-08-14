@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Laptop Ledger</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#10151a">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-0:#0b0e12;
+    --bg-1:#10151a;
+    --surface: rgba(26,33,41,0.62);
+    --surface-solid:#171d24;
+    --surface-2: rgba(38,47,57,0.65);
+    --border: rgba(255,255,255,0.08);
+    --border-strong: rgba(255,255,255,0.14);
+    --text:#eef1f0;
+    --text-dim:#93a0a8;
+    --accent:#eeab4c;
+    --accent-2:#f6c778;
+    --accent-soft:rgba(238,171,76,0.15);
+    --good:#4cc79a;
+    --good-2:#6fe0b7;
+    --good-soft:rgba(76,199,154,0.15);
+    --blue:#5db3ea;
+    --blue-soft:rgba(93,179,234,0.15);
+    --red:#ea6f63;
+    --red-soft:rgba(234,111,99,0.15);
+    --font-display:'Space Grotesk',sans-serif;
+    --font-body:'IBM Plex Sans',sans-serif;
+    --font-mono:'IBM Plex Mono',monospace;
+    --ease: cubic-bezier(.2,.8,.2,1);
+    --shadow-sm: 0 2px 10px rgba(0,0,0,.25);
+    --shadow-md: 0 10px 34px rgba(0,0,0,.38);
+    --shadow-lift: 0 16px 42px rgba(0,0,0,.45);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;color:var(--text);font-family:var(--font-body);-webkit-font-smoothing:antialiased;
+    background:
+      radial-gradient(760px 420px at 8% -8%, rgba(238,171,76,0.13), transparent 60%),
+      radial-gradient(680px 460px at 96% 12%, rgba(93,179,234,0.10), transparent 55%),
+      radial-gradient(900px 600px at 50% 115%, rgba(76,199,154,0.09), transparent 60%),
+      linear-gradient(180deg, var(--bg-1), var(--bg-0));
+    background-attachment: fixed;
+    min-height:100vh;
+  }
+  ::selection{background:var(--accent-soft);}
+  .wrap{max-width:1150px;margin:0 auto;padding:24px 20px 110px;}
+
+  header.top{
+    position:relative;padding:32px 28px 26px;margin-bottom:22px;
+    border:1px solid var(--border);border-radius:22px;
+    background: linear-gradient(165deg, rgba(255,255,255,0.05), rgba(255,255,255,0.015));
+    backdrop-filter: blur(18px);
+    box-shadow: var(--shadow-md), inset 0 1px 0 rgba(255,255,255,0.05);
+    overflow:hidden;
+  }
+  header.top::after{
+    content:"";position:absolute;left:0;right:0;bottom:0;height:1px;
+    background: linear-gradient(90deg, transparent, var(--accent-2), var(--blue), transparent);
+    opacity:.5;
+  }
+  header.top .eyebrow{
+    font-family:var(--font-mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--accent-2);display:inline-flex;align-items:center;gap:8px;
+  }
+  header.top .eyebrow::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--accent-2);box-shadow:0 0 10px var(--accent-2);}
+  header.top h1{
+    font-family:var(--font-display);font-size:clamp(28px,5vw,38px);margin:8px 0 6px;letter-spacing:-0.02em;
+    background:linear-gradient(120deg, var(--text) 30%, var(--accent-2) 90%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  header.top p{margin:0;color:var(--text-dim);font-size:14.5px;max-width:56ch;line-height:1.55;}
+  .top-actions{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap;align-items:center;}
+
+  button{font-family:var(--font-body);cursor:pointer;}
+  .btn{
+    border:1px solid var(--border);background:var(--surface-2);color:var(--text);
+    padding:11px 18px;border-radius:12px;font-size:13.5px;font-weight:500;
+    display:inline-flex;align-items:center;gap:8px;
+    transition:border-color .2s var(--ease), transform .15s var(--ease), box-shadow .2s var(--ease), background .2s var(--ease);
+    backdrop-filter: blur(10px);
+  }
+  .btn:hover{border-color:var(--border-strong);transform:translateY(-1px);box-shadow:var(--shadow-sm);}
+  .btn:active{transform:translateY(0) scale(.98);}
+  .btn.primary{
+    background:linear-gradient(135deg, var(--accent-2), var(--accent));
+    color:#1a1305;border-color:transparent;font-weight:600;
+    box-shadow: 0 6px 20px rgba(238,171,76,0.28);
+  }
+  .btn.primary:hover{filter:brightness(1.05);box-shadow:0 10px 28px rgba(238,171,76,0.38);transform:translateY(-2px);}
+  .btn.ghost{background:transparent;}
+  .btn.danger-step{border-color:var(--red);color:var(--red);background:var(--red-soft);}
+  .btn:disabled{opacity:.4;cursor:not-allowed;transform:none;}
+
+  select, input[type=text], input[type=number], input[type=date], input[type=url], textarea{
+    font-family:var(--font-body);background:rgba(255,255,255,0.035);border:1px solid var(--border);color:var(--text);
+    border-radius:11px;padding:10px 12px;font-size:13.5px;outline:none;width:100%;
+    transition:border-color .2s var(--ease), box-shadow .2s var(--ease), background .2s var(--ease);
+  }
+  select:focus, input:focus, textarea:focus{
+    border-color:var(--accent);background:rgba(255,255,255,0.055);
+    box-shadow:0 0 0 3px var(--accent-soft);
+  }
+  textarea{resize:vertical;min-height:60px;font-size:13.5px;line-height:1.5;}
+
+  .stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px;}
+  .stat-card{
+    position:relative;border:1px solid var(--border);background:var(--surface);border-radius:16px;
+    padding:14px 16px 14px 18px;backdrop-filter:blur(14px);box-shadow:var(--shadow-sm);
+    transition:transform .2s var(--ease), box-shadow .2s var(--ease);
+    overflow:hidden;
+  }
+  .stat-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-md);}
+  .stat-card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg, var(--text-dim), transparent);}
+  .stat-card.pending::before{background:linear-gradient(180deg, var(--accent-2), var(--accent));}
+  .stat-card.good::before{background:linear-gradient(180deg, var(--good-2), var(--good));}
+  .stat-card .label{font-size:10.5px;text-transform:uppercase;letter-spacing:.09em;color:var(--text-dim);}
+  .stat-card .value{font-family:var(--font-mono);font-size:22px;font-variant-numeric:tabular-nums;margin-top:4px;letter-spacing:-0.01em;}
+  .stat-card.good .value{color:var(--good-2);}
+  .stat-card.pending .value{color:var(--accent-2);}
+
+  .toolbar{
+    display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:18px;
+    padding:8px;border:1px solid var(--border);border-radius:14px;background:var(--surface);backdrop-filter:blur(12px);
+  }
+  .toolbar input[type=text]{flex:1;min-width:160px;border:none;background:rgba(255,255,255,0.03);}
+  .toolbar select{width:auto;min-width:150px;border:none;background:rgba(255,255,255,0.03);}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:16px;}
+  .card{
+    position:relative;border:1px solid var(--border);background:var(--surface);border-radius:18px;
+    padding:18px;display:flex;flex-direction:column;gap:11px;backdrop-filter:blur(16px);
+    box-shadow:var(--shadow-sm);
+    transition:transform .22s var(--ease), box-shadow .22s var(--ease), border-color .22s var(--ease);
+  }
+  .card:hover{transform:translateY(-3px);box-shadow:var(--shadow-lift);border-color:var(--border-strong);}
+  .card.is-sold{border-color:rgba(76,199,154,0.3);box-shadow:0 0 0 1px rgba(76,199,154,0.08), var(--shadow-sm);}
+  .card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;}
+  .laptop-title{font-family:var(--font-display);font-size:17.5px;font-weight:600;line-height:1.25;letter-spacing:-0.01em;}
+  .laptop-sub{font-size:12px;color:var(--text-dim);margin-top:3px;font-family:var(--font-mono);}
+  .status-pill{
+    display:inline-flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:11px;
+    padding:5px 10px;border-radius:20px;white-space:nowrap;border:1px solid transparent;
+  }
+  .status-pill.available{background:var(--blue-soft);color:var(--blue);border-color:rgba(93,179,234,0.25);}
+  .status-pill.sold{background:var(--good-soft);color:var(--good-2);border-color:rgba(76,199,154,0.3);box-shadow:0 0 12px rgba(76,199,154,0.15);}
+  .dot{width:6px;height:6px;border-radius:50%;background:currentColor;}
+
+  .stat-mini-row{display:flex;gap:8px;flex-wrap:wrap;}
+  .stat-mini{flex:1;min-width:80px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px;padding:8px 10px;}
+  .stat-mini .label{font-size:9.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--text-dim);}
+  .stat-mini .value{font-family:var(--font-mono);font-size:13.5px;margin-top:3px;font-variant-numeric:tabular-nums;}
+
+  .price-row{display:flex;gap:8px;}
+  .price-box{flex:1;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px;padding:9px 11px;}
+  .price-box .label{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);}
+  .price-box .value{font-family:var(--font-mono);font-size:16.5px;font-variant-numeric:tabular-nums;margin-top:3px;}
+  .price-box.sell{background:var(--accent-soft);border-color:rgba(238,171,76,0.25);}
+  .price-box.sell .value{color:var(--accent-2);}
+
+  .tag-block{display:flex;flex-direction:column;gap:4px;}
+  .tag-block .heading{font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);}
+  .tag-block .body-text{font-size:12.5px;color:var(--text-dim);line-height:1.55;}
+  .tag-block.defects .body-text{color:var(--red);}
+
+  .ad-link{
+    display:inline-flex;align-items:center;gap:5px;font-size:12.5px;color:var(--blue);text-decoration:none;
+    width:fit-content;padding:5px 10px;border-radius:8px;background:var(--blue-soft);border:1px solid rgba(93,179,234,0.25);
+    transition:background .2s var(--ease);
+  }
+  .ad-link:hover{background:rgba(93,179,234,0.24);}
+
+  .card-foot{display:flex;justify-content:space-between;align-items:center;margin-top:auto;padding-top:10px;border-top:1px solid var(--border);}
+  .card-foot .left-actions{display:flex;gap:6px;flex-wrap:wrap;}
+  .icon-btn{
+    background:rgba(255,255,255,0.03);border:1px solid var(--border);color:var(--text-dim);padding:6px 11px;border-radius:9px;font-size:12px;
+    transition:color .2s var(--ease), border-color .2s var(--ease), background .2s var(--ease);
+  }
+  .icon-btn:hover{color:var(--text);border-color:var(--border-strong);background:rgba(255,255,255,0.06);}
+  .icon-btn.mark-sold{color:var(--good-2);border-color:rgba(76,199,154,0.3);}
+  .icon-btn.mark-sold:hover{background:var(--good-soft);}
+  .added-date{font-family:var(--font-mono);font-size:10.5px;color:var(--text-dim);}
+
+  .empty{
+    text-align:center;padding:80px 20px;color:var(--text-dim);
+    border:1px dashed var(--border-strong);border-radius:20px;background:var(--surface);backdrop-filter:blur(10px);
+  }
+  .empty .big{font-family:var(--font-display);font-size:21px;color:var(--text);margin-bottom:8px;}
+
+  .modal-overlay{
+    position:fixed;inset:0;background:rgba(5,6,8,.6);backdrop-filter:blur(6px);
+    display:flex;align-items:flex-start;justify-content:center;padding:26px 14px;overflow-y:auto;z-index:50;
+    animation: fadeIn .18s var(--ease);
+  }
+  @keyframes fadeIn{ from{opacity:0;} to{opacity:1;} }
+  .modal{
+    background:linear-gradient(165deg, rgba(30,37,45,0.96), rgba(20,25,31,0.98));
+    border:1px solid var(--border-strong);border-radius:20px;width:100%;max-width:620px;padding:26px;margin:auto;
+    box-shadow:var(--shadow-lift);
+    animation: slideUp .22s var(--ease);
+  }
+  @keyframes slideUp{ from{opacity:0;transform:translateY(14px);} to{opacity:1;transform:translateY(0);} }
+  .modal h2{font-family:var(--font-display);font-size:21px;margin:0 0 4px;letter-spacing:-0.01em;}
+  .modal .sub{font-size:12.5px;color:var(--text-dim);margin-bottom:20px;}
+  .field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+  .field-row.three{grid-template-columns:1fr 1fr 1fr;}
+  .field{display:flex;flex-direction:column;gap:6px;}
+  .field label{font-size:11.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--text-dim);}
+  .field-full{grid-column:1 / -1;}
+  .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:22px;}
+
+  .toggle-row{
+    display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.035);border:1px solid var(--border);
+    border-radius:12px;padding:12px 14px;margin-bottom:12px;
+  }
+  .toggle-row label{font-size:13px;font-weight:500;flex:1;}
+  .switch{position:relative;width:44px;height:25px;flex-shrink:0;}
+  .switch input{opacity:0;width:0;height:0;}
+  .slider{position:absolute;inset:0;background:var(--border-strong);border-radius:20px;cursor:pointer;transition:.2s var(--ease);}
+  .slider:before{content:"";position:absolute;width:19px;height:19px;left:3px;top:3px;background:var(--text);border-radius:50%;transition:.2s var(--ease);}
+  .switch input:checked + .slider{background:linear-gradient(135deg, var(--good-2), var(--good));}
+  .switch input:checked + .slider:before{transform:translateX(19px);background:#0c1210;}
+
+  @media (max-width:560px){
+    .field-row, .field-row.three{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="eyebrow">/// inventory & sales log</div>
+    <h1>Laptop Ledger</h1>
+    <p>Every laptop that's passed through your hands — its specs, its condition, and whether it's still on the shelf or already sold.</p>
+    <div class="top-actions">
+      <button class="btn primary" id="openAddBtn">+ Log a laptop</button>
+    </div>
+  </header>
+
+  <div class="stats-row" id="statsRow"></div>
+
+  <div class="toolbar">
+    <input type="text" id="searchInput" placeholder="Search by model, laptop #, or service #…" />
+    <select id="statusFilter">
+      <option value="all">All laptops</option>
+      <option value="available">Available only</option>
+      <option value="sold">Sold only</option>
+    </select>
+    <select id="sortSelect">
+      <option value="added_desc">Recently added</option>
+      <option value="laptop_number">Laptop number</option>
+      <option value="selling_price_desc">Selling price (high-low)</option>
+      <option value="date_sold_desc">Recently sold</option>
+    </select>
+  </div>
+
+  <div id="gridArea"><div class="empty"><div class="big">Loading…</div>Fetching your inventory.</div></div>
+</div>
+
+<!-- Add/Edit modal -->
+<div class="modal-overlay" id="formOverlay" style="display:none;">
+  <div class="modal">
+    <h2 id="formTitle">Log a laptop</h2>
+    <div class="sub">Fill in what you have — you can edit it anytime, including after it's sold.</div>
+
+    <div class="field-row three">
+      <div class="field"><label>Laptop #</label><input type="text" id="f_laptop_number" placeholder="LP-014" /></div>
+      <div class="field field-full"><label>Model</label><input type="text" id="f_model" placeholder="Dell Latitude 5410" /></div>
+    </div>
+    <div class="field-row three">
+      <div class="field"><label>CPU</label><input type="text" id="f_cpu" placeholder="i5-10310U" /></div>
+      <div class="field"><label>RAM</label><input type="text" id="f_ram" placeholder="16GB" /></div>
+      <div class="field"><label>SSD</label><input type="text" id="f_ssd" placeholder="512GB NVMe" /></div>
+    </div>
+    <div class="field-row three">
+      <div class="field"><label>Battery condition</label><input type="text" id="f_battery" placeholder="92% health" /></div>
+      <div class="field"><label>Screen size</label><input type="text" id="f_screen" placeholder="14&quot;" /></div>
+      <div class="field"><label>Service #</label><input type="text" id="f_service_number" placeholder="SVC-88213" /></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Windows</label><input type="text" id="f_windows" placeholder="Windows 11 Pro, activated" /></div>
+      <div class="field"><label>Accessories included</label><input type="text" id="f_accessories" placeholder="Charger, no bag" /></div>
+    </div>
+
+    <div class="field field-full" style="margin-bottom:10px;">
+      <label>Defects</label>
+      <textarea id="f_defects" placeholder="Hinge slightly loose, small scratch on lid…"></textarea>
+    </div>
+    <div class="field field-full" style="margin-bottom:10px;">
+      <label>Condition (general notes)</label>
+      <textarea id="f_condition" placeholder="Overall cosmetic and functional condition…"></textarea>
+    </div>
+
+    <div class="field-row">
+      <div class="field"><label>Market price (€)</label><input type="number" id="f_market_price" placeholder="450" /></div>
+      <div class="field"><label>Your selling price (€)</label><input type="number" id="f_selling_price" placeholder="399" /></div>
+    </div>
+    <div class="field field-full" style="margin-bottom:10px;">
+      <label>Ad URL</label>
+      <input type="url" id="f_ad_url" placeholder="https://…" />
+    </div>
+
+    <div class="toggle-row">
+      <label for="f_sold_toggle">Mark as sold</label>
+      <label class="switch">
+        <input type="checkbox" id="f_sold_toggle" />
+        <span class="slider"></span>
+      </label>
+    </div>
+    <div class="field field-full" id="dateSoldField" style="display:none;margin-bottom:6px;">
+      <label>Date sold</label>
+      <input type="date" id="f_date_sold" />
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn ghost" id="cancelFormBtn">Cancel</button>
+      <button class="btn primary" id="saveLaptopBtn">Save laptop</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  // ---- Supabase config ----
+  var SUPABASE_URL = 'https://xxcxwskzpmnoncrazcyw.supabase.co';
+  var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVlYXBuZ2lxeWVqZXJ2dWpsbG15Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY1MjMxNzksImV4cCI6MjEwMjA5OTE3OX0.okwfq8f5EJEzvLaSX6yek3o5Qpz2j2ZhSjJaMscj2bM';
+
+  var laptops = [];
+  var editingId = null;
+  var loadError = false;
+
+  function fmtInt(n){
+    if(n === null || n === undefined || n === '') return '—';
+    return Number(n).toLocaleString('en-US');
+  }
+  function esc(s){
+    var d = document.createElement('div');
+    d.textContent = s == null ? '' : s;
+    return d.innerHTML;
+  }
+
+  async function sb(path, options){
+    options = options || {};
+    var res = await fetch(SUPABASE_URL + '/rest/v1/' + path, {
+      method: options.method || 'GET',
+      headers: Object.assign({
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+        'Content-Type': 'application/json',
+        'Prefer': options.prefer || 'return=representation'
+      }, options.headers || {}),
+      body: options.body
+    });
+    if(!res.ok){
+      var errText = await res.text().catch(function(){ return ''; });
+      throw new Error('Supabase ' + res.status + ': ' + errText);
+    }
+    var text = await res.text();
+    return text ? JSON.parse(text) : null;
+  }
+
+  function rowToLaptop(row){
+    return {
+      id: row.id,
+      laptopNumber: row.laptop_number,
+      model: row.model,
+      cpu: row.cpu,
+      ram: row.ram,
+      ssd: row.ssd,
+      battery: row.battery_condition,
+      serviceNumber: row.service_number,
+      windows: row.windows,
+      screenSize: row.screen_size,
+      accessories: row.accessories,
+      defects: row.defects,
+      condition: row.condition,
+      marketPrice: row.market_price,
+      sellingPrice: row.selling_price,
+      adUrl: row.ad_url,
+      status: row.status || 'available',
+      dateSold: row.date_sold,
+      dateAdded: row.date_added
+    };
+  }
+  function laptopToRow(l){
+    return {
+      id: l.id,
+      laptop_number: l.laptopNumber,
+      model: l.model,
+      cpu: l.cpu,
+      ram: l.ram,
+      ssd: l.ssd,
+      battery_condition: l.battery,
+      service_number: l.serviceNumber,
+      windows: l.windows,
+      screen_size: l.screenSize,
+      accessories: l.accessories,
+      defects: l.defects,
+      condition: l.condition,
+      market_price: l.marketPrice,
+      selling_price: l.sellingPrice,
+      ad_url: l.adUrl,
+      status: l.status,
+      date_sold: l.dateSold,
+      date_added: l.dateAdded
+    };
+  }
+
+  async function loadLaptops(){
+    loadError = false;
+    try{
+      var rows = await sb('laptops?select=*&order=date_added.desc');
+      laptops = (rows || []).map(rowToLaptop);
+    }catch(e){
+      console.error('Could not load laptops', e);
+      laptops = [];
+      loadError = true;
+    }
+    render();
+  }
+
+  async function persistNewOrUpdated(laptop, isEdit){
+    var row = laptopToRow(laptop);
+    if(isEdit){
+      await sb('laptops?id=eq.' + encodeURIComponent(laptop.id), { method:'PATCH', body: JSON.stringify(row) });
+    } else {
+      await sb('laptops', { method:'POST', body: JSON.stringify(row) });
+    }
+  }
+  async function persistDelete(id){
+    await sb('laptops?id=eq.' + encodeURIComponent(id), { method:'DELETE', prefer:'return=minimal' });
+  }
+
+  function renderStats(){
+    var total = laptops.length;
+    var available = laptops.filter(function(l){ return l.status !== 'sold'; }).length;
+    var sold = laptops.filter(function(l){ return l.status === 'sold'; }).length;
+    var soldValue = laptops.filter(function(l){ return l.status === 'sold'; })
+      .reduce(function(sum,l){ return sum + (Number(l.sellingPrice) || 0); }, 0);
+    var html = '';
+    html += '<div class="stat-card"><div class="label">Total logged</div><div class="value">' + total + '</div></div>';
+    html += '<div class="stat-card pending"><div class="label">Available</div><div class="value">' + available + '</div></div>';
+    html += '<div class="stat-card good"><div class="label">Sold</div><div class="value">' + sold + '</div></div>';
+    html += '<div class="stat-card good"><div class="label">Total sold value</div><div class="value">€' + fmtInt(soldValue) + '</div></div>';
+    document.getElementById('statsRow').innerHTML = html;
+  }
+
+  function filteredSorted(){
+    var q = document.getElementById('searchInput').value.trim().toLowerCase();
+    var statusF = document.getElementById('statusFilter').value;
+    var sort = document.getElementById('sortSelect').value;
+    var list = laptops.filter(function(l){
+      var matchesQ = !q || ((l.model||'') + ' ' + (l.laptopNumber||'') + ' ' + (l.serviceNumber||'')).toLowerCase().indexOf(q) !== -1;
+      var matchesStatus = statusF === 'all' || (statusF === 'sold' ? l.status === 'sold' : l.status !== 'sold');
+      return matchesQ && matchesStatus;
+    });
+    list = list.slice();
+    if(sort === 'added_desc') list.sort(function(a,b){ return b.dateAdded - a.dateAdded; });
+    else if(sort === 'laptop_number') list.sort(function(a,b){ return (a.laptopNumber||'').localeCompare(b.laptopNumber||'', undefined, {numeric:true}); });
+    else if(sort === 'selling_price_desc') list.sort(function(a,b){ return (b.sellingPrice||0) - (a.sellingPrice||0); });
+    else if(sort === 'date_sold_desc') list.sort(function(a,b){
+      var da = a.dateSold ? new Date(a.dateSold) : new Date(0);
+      var db = b.dateSold ? new Date(b.dateSold) : new Date(0);
+      return db - da;
+    });
+    return list;
+  }
+
+  function render(){
+    renderStats();
+    var grid = document.getElementById('gridArea');
+
+    if(loadError){
+      grid.innerHTML = '<div class="empty"><div class="big">Couldn\'t connect</div>Check that the Supabase URL and anon key at the top of the script are filled in correctly, then reload.</div>';
+      return;
+    }
+    if(laptops.length === 0){
+      grid.innerHTML = '<div class="empty"><div class="big">No laptops logged yet</div>Tap "Log a laptop" to add the first one to your inventory.</div>';
+      return;
+    }
+    var list = filteredSorted();
+    if(list.length === 0){
+      grid.innerHTML = '<div class="empty"><div class="big">No matches</div>Try a different search or filter.</div>';
+      return;
+    }
+
+    var html = '<div class="grid">';
+    list.forEach(function(l){
+      var isSold = l.status === 'sold';
+      html += '<div class="card' + (isSold ? ' is-sold' : '') + '" data-id="' + l.id + '">';
+      html += '  <div class="card-head">';
+      html += '    <div><div class="laptop-title">' + esc(l.model || 'Unnamed laptop') + '</div>';
+      html += '    <div class="laptop-sub">#' + esc(l.laptopNumber || '—') + (l.serviceNumber ? ' · SVC ' + esc(l.serviceNumber) : '') + '</div></div>';
+      html += '    <span class="status-pill ' + (isSold?'sold':'available') + '"><span class="dot"></span>' + (isSold?'Sold':'Available') + '</span>';
+      html += '  </div>';
+
+      html += '  <div class="stat-mini-row">';
+      html += '    <div class="stat-mini"><div class="label">CPU</div><div class="value">' + esc(l.cpu || '—') + '</div></div>';
+      html += '    <div class="stat-mini"><div class="label">RAM</div><div class="value">' + esc(l.ram || '—') + '</div></div>';
+      html += '    <div class="stat-mini"><div class="label">SSD</div><div class="value">' + esc(l.ssd || '—') + '</div></div>';
+      html += '  </div>';
+      html += '  <div class="stat-mini-row">';
+      html += '    <div class="stat-mini"><div class="label">Battery</div><div class="value">' + esc(l.battery || '—') + '</div></div>';
+      html += '    <div class="stat-mini"><div class="label">Screen</div><div class="value">' + esc(l.screenSize || '—') + '</div></div>';
+      html += '    <div class="stat-mini"><div class="label">Windows</div><div class="value">' + esc(l.windows || '—') + '</div></div>';
+      html += '  </div>';
+
+      if(l.accessories){
+        html += '  <div class="tag-block"><div class="heading">Accessories</div><div class="body-text">' + esc(l.accessories) + '</div></div>';
+      }
+      if(l.defects){
+        html += '  <div class="tag-block defects"><div class="heading">Defects</div><div class="body-text">' + esc(l.defects) + '</div></div>';
+      }
+      if(l.condition){
+        html += '  <div class="tag-block"><div class="heading">Condition</div><div class="body-text">' + esc(l.condition) + '</div></div>';
+      }
+
+      html += '  <div class="price-row">';
+      html += '    <div class="price-box"><div class="label">Market price</div><div class="value">' + (l.marketPrice ? '€'+fmtInt(l.marketPrice) : '—') + '</div></div>';
+      html += '    <div class="price-box sell"><div class="label">Selling price</div><div class="value">' + (l.sellingPrice ? '€'+fmtInt(l.sellingPrice) : '—') + '</div></div>';
+      html += '  </div>';
+
+      if(isSold && l.dateSold){
+        html += '  <div class="laptop-sub">Sold on ' + new Date(l.dateSold+'T00:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) + '</div>';
+      }
+      if(l.adUrl){
+        html += '  <a class="ad-link" href="' + esc(l.adUrl) + '" target="_blank" rel="noopener">View ad ↗</a>';
+      }
+
+      html += '  <div class="card-foot">';
+      html += '    <div class="left-actions">';
+      html += '      <button class="icon-btn editBtn" data-id="' + l.id + '">Edit</button>';
+      if(!isSold){
+        html += '      <button class="icon-btn mark-sold quickSoldBtn" data-id="' + l.id + '">Mark sold</button>';
+      }
+      html += '      <button class="icon-btn deleteBtn" data-id="' + l.id + '">Remove</button>';
+      html += '    </div>';
+      html += '    <div class="added-date">' + new Date(l.dateAdded).toLocaleDateString('en-GB',{day:'2-digit',month:'short'}) + '</div>';
+      html += '  </div>';
+      html += '</div>';
+    });
+    html += '</div>';
+    grid.innerHTML = html;
+
+    grid.querySelectorAll('.editBtn').forEach(function(btn){
+      btn.addEventListener('click', function(){ openForm(btn.getAttribute('data-id')); });
+    });
+    grid.querySelectorAll('.deleteBtn').forEach(function(btn){
+      btn.addEventListener('click', function(){ handleDeleteClick(btn); });
+    });
+    grid.querySelectorAll('.quickSoldBtn').forEach(function(btn){
+      btn.addEventListener('click', function(){ quickMarkSold(btn.getAttribute('data-id')); });
+    });
+  }
+
+  async function quickMarkSold(id){
+    var laptop = laptops.find(function(l){ return l.id === id; });
+    if(!laptop) return;
+    laptop.status = 'sold';
+    laptop.dateSold = new Date().toISOString().slice(0,10);
+    try{
+      await persistNewOrUpdated(laptop, true);
+      await loadLaptops();
+    }catch(e){
+      alert('Could not update — check your connection.');
+    }
+  }
+
+  async function handleDeleteClick(btn){
+    if(btn.dataset.confirming === '1'){
+      var id = btn.getAttribute('data-id');
+      var removed = laptops.find(function(l){ return l.id === id; });
+      laptops = laptops.filter(function(l){ return l.id !== id; });
+      render();
+      try{
+        await persistDelete(id);
+      }catch(e){
+        console.error('Delete failed, restoring', e);
+        if(removed) laptops.push(removed);
+        render();
+      }
+    } else {
+      btn.dataset.confirming = '1';
+      btn.textContent = 'Confirm?';
+      btn.classList.add('danger-step');
+      setTimeout(function(){
+        if(btn && btn.isConnected){
+          btn.dataset.confirming = '0';
+          btn.textContent = 'Remove';
+          btn.classList.remove('danger-step');
+        }
+      }, 3000);
+    }
+  }
+
+  // ---- Add/Edit form ----
+  function openForm(id){
+    editingId = id || null;
+    var l = id ? laptops.find(function(x){ return x.id === id; }) : null;
+
+    document.getElementById('formTitle').textContent = l ? 'Edit laptop' : 'Log a laptop';
+    document.getElementById('f_laptop_number').value = l ? l.laptopNumber || '' : '';
+    document.getElementById('f_model').value = l ? l.model || '' : '';
+    document.getElementById('f_cpu').value = l ? l.cpu || '' : '';
+    document.getElementById('f_ram').value = l ? l.ram || '' : '';
+    document.getElementById('f_ssd').value = l ? l.ssd || '' : '';
+    document.getElementById('f_battery').value = l ? l.battery || '' : '';
+    document.getElementById('f_screen').value = l ? l.screenSize || '' : '';
+    document.getElementById('f_service_number').value = l ? l.serviceNumber || '' : '';
+    document.getElementById('f_windows').value = l ? l.windows || '' : '';
+    document.getElementById('f_accessories').value = l ? l.accessories || '' : '';
+    document.getElementById('f_defects').value = l ? l.defects || '' : '';
+    document.getElementById('f_condition').value = l ? l.condition || '' : '';
+    document.getElementById('f_market_price').value = l ? l.marketPrice || '' : '';
+    document.getElementById('f_selling_price').value = l ? l.sellingPrice || '' : '';
+    document.getElementById('f_ad_url').value = l ? l.adUrl || '' : '';
+
+    var isSold = l ? l.status === 'sold' : false;
+    document.getElementById('f_sold_toggle').checked = isSold;
+    document.getElementById('dateSoldField').style.display = isSold ? 'flex' : 'none';
+    document.getElementById('f_date_sold').value = l && l.dateSold ? l.dateSold : new Date().toISOString().slice(0,10);
+
+    document.getElementById('formOverlay').style.display = 'flex';
+  }
+  function closeForm(){ document.getElementById('formOverlay').style.display = 'none'; }
+
+  document.getElementById('f_sold_toggle').addEventListener('change', function(){
+    document.getElementById('dateSoldField').style.display = this.checked ? 'flex' : 'none';
+    if(this.checked && !document.getElementById('f_date_sold').value){
+      document.getElementById('f_date_sold').value = new Date().toISOString().slice(0,10);
+    }
+  });
+
+  async function saveLaptop(){
+    var model = document.getElementById('f_model').value.trim();
+    if(!model){
+      var mEl = document.getElementById('f_model');
+      mEl.focus(); mEl.style.borderColor = 'var(--red)';
+      return;
+    }
+    var isSold = document.getElementById('f_sold_toggle').checked;
+    var laptop = {
+      id: editingId || ('l_' + Date.now() + '_' + Math.random().toString(36).slice(2,7)),
+      laptopNumber: document.getElementById('f_laptop_number').value.trim(),
+      model: model,
+      cpu: document.getElementById('f_cpu').value.trim(),
+      ram: document.getElementById('f_ram').value.trim(),
+      ssd: document.getElementById('f_ssd').value.trim(),
+      battery: document.getElementById('f_battery').value.trim(),
+      screenSize: document.getElementById('f_screen').value.trim(),
+      serviceNumber: document.getElementById('f_service_number').value.trim(),
+      windows: document.getElementById('f_windows').value.trim(),
+      accessories: document.getElementById('f_accessories').value.trim(),
+      defects: document.getElementById('f_defects').value.trim(),
+      condition: document.getElementById('f_condition').value.trim(),
+      marketPrice: document.getElementById('f_market_price').value ? Number(document.getElementById('f_market_price').value) : null,
+      sellingPrice: document.getElementById('f_selling_price').value ? Number(document.getElementById('f_selling_price').value) : null,
+      adUrl: document.getElementById('f_ad_url').value.trim(),
+      status: isSold ? 'sold' : 'available',
+      dateSold: isSold ? document.getElementById('f_date_sold').value : null,
+      dateAdded: editingId ? (laptops.find(function(x){return x.id===editingId;}) || {}).dateAdded || Date.now() : Date.now()
+    };
+
+    var saveBtn = document.getElementById('saveLaptopBtn');
+    var wasEdit = !!editingId;
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving…';
+    try{
+      await persistNewOrUpdated(laptop, wasEdit);
+      closeForm();
+      await loadLaptops();
+    }catch(e){
+      console.error('Save failed', e);
+      alert('Could not save to the database. Check your connection and that the Supabase key is set correctly, then try again.');
+    }finally{
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Save laptop';
+    }
+  }
+
+  document.getElementById('openAddBtn').addEventListener('click', function(){ openForm(null); });
+  document.getElementById('cancelFormBtn').addEventListener('click', closeForm);
+  document.getElementById('saveLaptopBtn').addEventListener('click', saveLaptop);
+  document.getElementById('f_model').addEventListener('input', function(){ this.style.borderColor=''; });
+  document.getElementById('searchInput').addEventListener('input', render);
+  document.getElementById('statusFilter').addEventListener('change', render);
+  document.getElementById('sortSelect').addEventListener('change', render);
+  document.getElementById('formOverlay').addEventListener('click', function(e){ if(e.target === this) closeForm(); });
+
+  loadLaptops();
+})();
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register('sw.js').catch(function(){});
+  });
+}
+</script>
+</body>
+</html>
