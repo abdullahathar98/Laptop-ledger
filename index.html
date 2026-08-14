@@ -103,6 +103,8 @@
     border-radius:11px;padding:10px 12px;font-size:13.5px;outline:none;width:100%;
     transition:border-color .2s var(--ease), box-shadow .2s var(--ease), background .2s var(--ease);
   }
+  select{ color-scheme: dark; }
+  select option{ background-color: var(--surface-solid); color: var(--text); }
   select:focus, input:focus, textarea:focus{
     border-color:var(--accent);background:rgba(255,255,255,0.055);
     box-shadow:0 0 0 3px var(--accent-soft);
@@ -250,14 +252,12 @@
     <input type="text" id="searchInput" placeholder="Search by model, laptop #, or service #…" />
     <select id="statusFilter">
       <option value="all">All laptops</option>
-      <option value="available">Available only</option>
-      <option value="sold">Sold only</option>
+      <option value="available">Available</option>
+      <option value="sold">Sold</option>
     </select>
     <select id="sortSelect">
-      <option value="added_desc">Recently added</option>
-      <option value="laptop_number">Laptop number</option>
-      <option value="selling_price_desc">Selling price (high-low)</option>
-      <option value="date_sold_desc">Recently sold</option>
+      <option value="price_asc">Price (Low to high)</option>
+      <option value="price_desc">Price (High to low)</option>
     </select>
   </div>
 
@@ -282,11 +282,16 @@
     <div class="field-row three">
       <div class="field"><label>Battery condition</label><input type="text" id="f_battery" placeholder="92% health" /></div>
       <div class="field"><label>Screen size</label><input type="text" id="f_screen" placeholder="14&quot;" /></div>
-      <div class="field"><label>Service #</label><input type="text" id="f_service_number" placeholder="SVC-88213" /></div>
+      <div class="field"><label>Windows</label><input type="text" id="f_windows" placeholder="Windows 11 Pro, activated" /></div>
+    </div>
+    <div class="field-row three">
+      <div class="field"><label>Service Tag</label><input type="text" id="f_service_tag" placeholder="SVC-88213" /></div>
+      <div class="field"><label>Service Code</label><input type="text" id="f_service_code" placeholder="" /></div>
+      <div class="field"><label>Accessories included</label><input type="text" id="f_accessories" placeholder="Charger, no bag" /></div>
     </div>
     <div class="field-row">
-      <div class="field"><label>Windows</label><input type="text" id="f_windows" placeholder="Windows 11 Pro, activated" /></div>
-      <div class="field"><label>Accessories included</label><input type="text" id="f_accessories" placeholder="Charger, no bag" /></div>
+      <div class="field"><label>Device ID</label><input type="text" id="f_device_id" placeholder="" /></div>
+      <div class="field"><label>Product ID</label><input type="text" id="f_product_id" placeholder="" /></div>
     </div>
 
     <div class="field field-full" style="margin-bottom:10px;">
@@ -301,10 +306,6 @@
     <div class="field-row">
       <div class="field"><label>Market price (€)</label><input type="number" id="f_market_price" placeholder="450" /></div>
       <div class="field"><label>Your selling price (€)</label><input type="number" id="f_selling_price" placeholder="399" /></div>
-    </div>
-    <div class="field field-full" style="margin-bottom:10px;">
-      <label>Ad URL</label>
-      <input type="url" id="f_ad_url" placeholder="https://…" />
     </div>
 
     <div class="toggle-row">
@@ -375,7 +376,10 @@
       ram: row.ram,
       ssd: row.ssd,
       battery: row.battery_condition,
-      serviceNumber: row.service_number,
+      serviceTag: row.service_number,
+      serviceCode: row.service_code,
+      deviceId: row.device_id,
+      productId: row.product_id,
       windows: row.windows,
       screenSize: row.screen_size,
       accessories: row.accessories,
@@ -383,7 +387,6 @@
       condition: row.condition,
       marketPrice: row.market_price,
       sellingPrice: row.selling_price,
-      adUrl: row.ad_url,
       status: row.status || 'available',
       dateSold: row.date_sold,
       dateAdded: row.date_added
@@ -398,7 +401,10 @@
       ram: l.ram,
       ssd: l.ssd,
       battery_condition: l.battery,
-      service_number: l.serviceNumber,
+      service_number: l.serviceTag,
+      service_code: l.serviceCode,
+      device_id: l.deviceId,
+      product_id: l.productId,
       windows: l.windows,
       screen_size: l.screenSize,
       accessories: l.accessories,
@@ -406,7 +412,6 @@
       condition: l.condition,
       market_price: l.marketPrice,
       selling_price: l.sellingPrice,
-      ad_url: l.adUrl,
       status: l.status,
       date_sold: l.dateSold,
       date_added: l.dateAdded
@@ -457,19 +462,13 @@
     var statusF = document.getElementById('statusFilter').value;
     var sort = document.getElementById('sortSelect').value;
     var list = laptops.filter(function(l){
-      var matchesQ = !q || ((l.model||'') + ' ' + (l.laptopNumber||'') + ' ' + (l.serviceNumber||'')).toLowerCase().indexOf(q) !== -1;
+      var matchesQ = !q || ((l.model||'') + ' ' + (l.laptopNumber||'') + ' ' + (l.serviceTag||'') + ' ' + (l.serviceCode||'')).toLowerCase().indexOf(q) !== -1;
       var matchesStatus = statusF === 'all' || (statusF === 'sold' ? l.status === 'sold' : l.status !== 'sold');
       return matchesQ && matchesStatus;
     });
     list = list.slice();
-    if(sort === 'added_desc') list.sort(function(a,b){ return b.dateAdded - a.dateAdded; });
-    else if(sort === 'laptop_number') list.sort(function(a,b){ return (a.laptopNumber||'').localeCompare(b.laptopNumber||'', undefined, {numeric:true}); });
-    else if(sort === 'selling_price_desc') list.sort(function(a,b){ return (b.sellingPrice||0) - (a.sellingPrice||0); });
-    else if(sort === 'date_sold_desc') list.sort(function(a,b){
-      var da = a.dateSold ? new Date(a.dateSold) : new Date(0);
-      var db = b.dateSold ? new Date(b.dateSold) : new Date(0);
-      return db - da;
-    });
+    if(sort === 'price_asc') list.sort(function(a,b){ return (a.sellingPrice ?? Infinity) - (b.sellingPrice ?? Infinity); });
+    else if(sort === 'price_desc') list.sort(function(a,b){ return (b.sellingPrice ?? -Infinity) - (a.sellingPrice ?? -Infinity); });
     return list;
   }
 
@@ -497,7 +496,7 @@
       html += '<div class="card' + (isSold ? ' is-sold' : '') + '" data-id="' + l.id + '">';
       html += '  <div class="card-head">';
       html += '    <div><div class="laptop-title">' + esc(l.model || 'Unnamed laptop') + '</div>';
-      html += '    <div class="laptop-sub">#' + esc(l.laptopNumber || '—') + (l.serviceNumber ? ' · SVC ' + esc(l.serviceNumber) : '') + '</div></div>';
+      html += '    <div class="laptop-sub">#' + esc(l.laptopNumber || '—') + (l.serviceTag ? ' · Tag ' + esc(l.serviceTag) : '') + '</div></div>';
       html += '    <span class="status-pill ' + (isSold?'sold':'available') + '"><span class="dot"></span>' + (isSold?'Sold':'Available') + '</span>';
       html += '  </div>';
 
@@ -511,6 +510,13 @@
       html += '    <div class="stat-mini"><div class="label">Screen</div><div class="value">' + esc(l.screenSize || '—') + '</div></div>';
       html += '    <div class="stat-mini"><div class="label">Windows</div><div class="value">' + esc(l.windows || '—') + '</div></div>';
       html += '  </div>';
+      if(l.serviceCode || l.deviceId || l.productId){
+        html += '  <div class="stat-mini-row">';
+        html += '    <div class="stat-mini"><div class="label">Service Code</div><div class="value">' + esc(l.serviceCode || '—') + '</div></div>';
+        html += '    <div class="stat-mini"><div class="label">Device ID</div><div class="value">' + esc(l.deviceId || '—') + '</div></div>';
+        html += '    <div class="stat-mini"><div class="label">Product ID</div><div class="value">' + esc(l.productId || '—') + '</div></div>';
+        html += '  </div>';
+      }
 
       if(l.accessories){
         html += '  <div class="tag-block"><div class="heading">Accessories</div><div class="body-text">' + esc(l.accessories) + '</div></div>';
@@ -529,9 +535,6 @@
 
       if(isSold && l.dateSold){
         html += '  <div class="laptop-sub">Sold on ' + new Date(l.dateSold+'T00:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) + '</div>';
-      }
-      if(l.adUrl){
-        html += '  <a class="ad-link" href="' + esc(l.adUrl) + '" target="_blank" rel="noopener">View ad ↗</a>';
       }
 
       html += '  <div class="card-foot">';
@@ -613,14 +616,16 @@
     document.getElementById('f_ssd').value = l ? l.ssd || '' : '';
     document.getElementById('f_battery').value = l ? l.battery || '' : '';
     document.getElementById('f_screen').value = l ? l.screenSize || '' : '';
-    document.getElementById('f_service_number').value = l ? l.serviceNumber || '' : '';
     document.getElementById('f_windows').value = l ? l.windows || '' : '';
+    document.getElementById('f_service_tag').value = l ? l.serviceTag || '' : '';
+    document.getElementById('f_service_code').value = l ? l.serviceCode || '' : '';
     document.getElementById('f_accessories').value = l ? l.accessories || '' : '';
+    document.getElementById('f_device_id').value = l ? l.deviceId || '' : '';
+    document.getElementById('f_product_id').value = l ? l.productId || '' : '';
     document.getElementById('f_defects').value = l ? l.defects || '' : '';
     document.getElementById('f_condition').value = l ? l.condition || '' : '';
     document.getElementById('f_market_price').value = l ? l.marketPrice || '' : '';
     document.getElementById('f_selling_price').value = l ? l.sellingPrice || '' : '';
-    document.getElementById('f_ad_url').value = l ? l.adUrl || '' : '';
 
     var isSold = l ? l.status === 'sold' : false;
     document.getElementById('f_sold_toggle').checked = isSold;
@@ -655,14 +660,16 @@
       ssd: document.getElementById('f_ssd').value.trim(),
       battery: document.getElementById('f_battery').value.trim(),
       screenSize: document.getElementById('f_screen').value.trim(),
-      serviceNumber: document.getElementById('f_service_number').value.trim(),
       windows: document.getElementById('f_windows').value.trim(),
+      serviceTag: document.getElementById('f_service_tag').value.trim(),
+      serviceCode: document.getElementById('f_service_code').value.trim(),
       accessories: document.getElementById('f_accessories').value.trim(),
+      deviceId: document.getElementById('f_device_id').value.trim(),
+      productId: document.getElementById('f_product_id').value.trim(),
       defects: document.getElementById('f_defects').value.trim(),
       condition: document.getElementById('f_condition').value.trim(),
       marketPrice: document.getElementById('f_market_price').value ? Number(document.getElementById('f_market_price').value) : null,
       sellingPrice: document.getElementById('f_selling_price').value ? Number(document.getElementById('f_selling_price').value) : null,
-      adUrl: document.getElementById('f_ad_url').value.trim(),
       status: isSold ? 'sold' : 'available',
       dateSold: isSold ? document.getElementById('f_date_sold').value : null,
       dateAdded: editingId ? (laptops.find(function(x){return x.id===editingId;}) || {}).dateAdded || Date.now() : Date.now()
