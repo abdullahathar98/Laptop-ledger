@@ -235,7 +235,30 @@
 </style>
 </head>
 <body>
-<div class="wrap">
+
+<div class="wrap" id="authGate" style="display:none;max-width:420px;">
+  <header class="top" style="margin-bottom:0;">
+    <div class="eyebrow">/// private access</div>
+    <h1>Sign in</h1>
+    <p>This inventory is private — sign in to view or edit it.</p>
+
+    <div class="field" style="margin-top:18px;">
+      <label>Username</label>
+      <input type="text" id="auth_username" placeholder="Username" autocomplete="username" />
+    </div>
+    <div class="field" style="margin-top:10px;">
+      <label>Password</label>
+      <input type="text" id="auth_password" placeholder="••••••••" autocomplete="current-password" style="-webkit-text-security:disc;text-security:disc;" />
+    </div>
+    <div id="authError" style="display:none;color:var(--red);font-size:12.5px;margin-top:10px;"></div>
+
+    <div class="top-actions">
+      <button class="btn primary" id="authSubmitBtn" style="flex:1;justify-content:center;">Sign in</button>
+    </div>
+  </header>
+</div>
+
+<div class="wrap" id="appRoot" style="display:none;">
 
   <header class="top">
     <div class="eyebrow">/// inventory & sales log</div>
@@ -243,6 +266,7 @@
     <p>Every laptop that's passed through your hands — its specs, its condition, and whether it's still on the shelf or already sold.</p>
     <div class="top-actions">
       <button class="btn primary" id="openAddBtn">+ Log a laptop</button>
+      <button class="btn ghost" id="logoutBtn">Log out</button>
     </div>
   </header>
 
@@ -286,12 +310,8 @@
     </div>
     <div class="field-row three">
       <div class="field"><label>Service Tag</label><input type="text" id="f_service_tag" placeholder="SVC-88213" /></div>
-      <div class="field"><label>Service Code</label><input type="text" id="f_service_code" placeholder="" /></div>
+      <div class="field"><label>Service Code</label><input type="text" id="f_service_code" placeholder="e.g. 1A2B-3C4D" /></div>
       <div class="field"><label>Accessories included</label><input type="text" id="f_accessories" placeholder="Charger, no bag" /></div>
-    </div>
-    <div class="field-row">
-      <div class="field"><label>Device ID</label><input type="text" id="f_device_id" placeholder="" /></div>
-      <div class="field"><label>Product ID</label><input type="text" id="f_product_id" placeholder="" /></div>
     </div>
 
     <div class="field field-full" style="margin-bottom:10px;">
@@ -347,18 +367,98 @@
     return d.innerHTML;
   }
 
+  // ---- Auth (Supabase email/password) ----
+  var TOKEN_KEY = 'll_auth_access';
+  var REFRESH_KEY = 'll_auth_refresh';
+  var EXPIRES_KEY = 'll_auth_expires';
+
+  function getAccessToken(){ return localStorage.getItem(TOKEN_KEY); }
+  function saveSession(session){
+    localStorage.setItem(TOKEN_KEY, session.access_token);
+    localStorage.setItem(REFRESH_KEY, session.refresh_token);
+    localStorage.setItem(EXPIRES_KEY, String(Date.now() + (session.expires_in || 3600) * 1000));
+  }
+  function clearSession(){
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(REFRESH_KEY);
+    localStorage.removeItem(EXPIRES_KEY);
+  }
+  function isTokenExpired(){
+    var exp = Number(localStorage.getItem(EXPIRES_KEY) || 0);
+    return Date.now() > (exp - 30000); // refresh 30s early
+  }
+
+  async function authRequest(path, body){
+    var res = await fetch(SUPABASE_URL + '/auth/v1/' + path, {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_ANON_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    var data = await res.json().catch(function(){ return {}; });
+    if(!res.ok){
+      throw new Error(data.error_description || data.msg || data.error || 'Authentication failed');
+    }
+    return data;
+  }
+
+  var USERNAME_DOMAIN = '@laptopledger.local';
+  function usernameToEmail(username){
+    username = (username || '').trim().toLowerCase();
+    return username.indexOf('@') === -1 ? username + USERNAME_DOMAIN : username;
+  }
+
+  async function signIn(username, password){
+    var data = await authRequest('token?grant_type=password', { email: usernameToEmail(username), password: password });
+    saveSession(data);
+  }
+  async function refreshSession(){
+    var refresh_token = localStorage.getItem(REFRESH_KEY);
+    if(!refresh_token) throw new Error('No refresh token');
+    var data = await authRequest('token?grant_type=refresh_token', { refresh_token: refresh_token });
+    saveSession(data);
+  }
+  function logout(){
+    clearSession();
+    showAuthGate();
+  }
+
+  async function ensureValidToken(){
+    if(!getAccessToken()) return false;
+    if(isTokenExpired()){
+      try{ await refreshSession(); }
+      catch(e){ clearSession(); return false; }
+    }
+    return true;
+  }
+
+  function showAuthGate(){
+    document.getElementById('authGate').style.display = 'block';
+    document.getElementById('appRoot').style.display = 'none';
+  }
+  function showApp(){
+    document.getElementById('authGate').style.display = 'none';
+    document.getElementById('appRoot').style.display = 'block';
+    loadLaptops();
+  }
+
   async function sb(path, options){
     options = options || {};
+    var token = getAccessToken() || SUPABASE_ANON_KEY;
     var res = await fetch(SUPABASE_URL + '/rest/v1/' + path, {
       method: options.method || 'GET',
       headers: Object.assign({
         'apikey': SUPABASE_ANON_KEY,
-        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+        'Authorization': 'Bearer ' + token,
         'Content-Type': 'application/json',
         'Prefer': options.prefer || 'return=representation'
       }, options.headers || {}),
       body: options.body
     });
+    if(res.status === 401){
+      clearSession();
+      showAuthGate();
+      throw new Error('Session expired — please sign in again.');
+    }
     if(!res.ok){
       var errText = await res.text().catch(function(){ return ''; });
       throw new Error('Supabase ' + res.status + ': ' + errText);
@@ -378,8 +478,6 @@
       battery: row.battery_condition,
       serviceTag: row.service_number,
       serviceCode: row.service_code,
-      deviceId: row.device_id,
-      productId: row.product_id,
       windows: row.windows,
       screenSize: row.screen_size,
       accessories: row.accessories,
@@ -403,8 +501,6 @@
       battery_condition: l.battery,
       service_number: l.serviceTag,
       service_code: l.serviceCode,
-      device_id: l.deviceId,
-      product_id: l.productId,
       windows: l.windows,
       screen_size: l.screenSize,
       accessories: l.accessories,
@@ -510,12 +606,8 @@
       html += '    <div class="stat-mini"><div class="label">Screen</div><div class="value">' + esc(l.screenSize || '—') + '</div></div>';
       html += '    <div class="stat-mini"><div class="label">Windows</div><div class="value">' + esc(l.windows || '—') + '</div></div>';
       html += '  </div>';
-      if(l.serviceCode || l.deviceId || l.productId){
-        html += '  <div class="stat-mini-row">';
-        html += '    <div class="stat-mini"><div class="label">Service Code</div><div class="value">' + esc(l.serviceCode || '—') + '</div></div>';
-        html += '    <div class="stat-mini"><div class="label">Device ID</div><div class="value">' + esc(l.deviceId || '—') + '</div></div>';
-        html += '    <div class="stat-mini"><div class="label">Product ID</div><div class="value">' + esc(l.productId || '—') + '</div></div>';
-        html += '  </div>';
+      if(l.serviceCode){
+        html += '  <div class="tag-block"><div class="heading">Service Code</div><div class="body-text">' + esc(l.serviceCode) + '</div></div>';
       }
 
       if(l.accessories){
@@ -620,8 +712,6 @@
     document.getElementById('f_service_tag').value = l ? l.serviceTag || '' : '';
     document.getElementById('f_service_code').value = l ? l.serviceCode || '' : '';
     document.getElementById('f_accessories').value = l ? l.accessories || '' : '';
-    document.getElementById('f_device_id').value = l ? l.deviceId || '' : '';
-    document.getElementById('f_product_id').value = l ? l.productId || '' : '';
     document.getElementById('f_defects').value = l ? l.defects || '' : '';
     document.getElementById('f_condition').value = l ? l.condition || '' : '';
     document.getElementById('f_market_price').value = l ? l.marketPrice || '' : '';
@@ -664,8 +754,6 @@
       serviceTag: document.getElementById('f_service_tag').value.trim(),
       serviceCode: document.getElementById('f_service_code').value.trim(),
       accessories: document.getElementById('f_accessories').value.trim(),
-      deviceId: document.getElementById('f_device_id').value.trim(),
-      productId: document.getElementById('f_product_id').value.trim(),
       defects: document.getElementById('f_defects').value.trim(),
       condition: document.getElementById('f_condition').value.trim(),
       marketPrice: document.getElementById('f_market_price').value ? Number(document.getElementById('f_market_price').value) : null,
@@ -700,8 +788,41 @@
   document.getElementById('statusFilter').addEventListener('change', render);
   document.getElementById('sortSelect').addEventListener('change', render);
   document.getElementById('formOverlay').addEventListener('click', function(e){ if(e.target === this) closeForm(); });
+  document.getElementById('logoutBtn').addEventListener('click', logout);
 
-  loadLaptops();
+  // ---- Login form wiring ----
+  function setAuthError(msg){
+    var el = document.getElementById('authError');
+    if(msg){ el.textContent = msg; el.style.display = 'block'; }
+    else { el.style.display = 'none'; }
+  }
+  document.getElementById('authSubmitBtn').addEventListener('click', async function(){
+    var username = document.getElementById('auth_username').value.trim();
+    var password = document.getElementById('auth_password').value;
+    if(!username || !password){ setAuthError('Enter both a username and a password.'); return; }
+    var btn = this;
+    btn.disabled = true;
+    btn.textContent = 'Signing in…';
+    setAuthError(null);
+    try{
+      await signIn(username, password);
+      showApp();
+    }catch(e){
+      setAuthError('Incorrect username or password.');
+    }finally{
+      btn.disabled = false;
+      btn.textContent = 'Sign in';
+    }
+  });
+  document.getElementById('auth_password').addEventListener('keydown', function(e){
+    if(e.key === 'Enter'){ document.getElementById('authSubmitBtn').click(); }
+  });
+
+  // ---- Bootstrap ----
+  (async function init(){
+    var ok = await ensureValidToken();
+    if(ok){ showApp(); } else { showAuthGate(); }
+  })();
 })();
 
 if('serviceWorker' in navigator){
